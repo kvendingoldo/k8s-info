@@ -172,3 +172,27 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+
+# Ruff
+.ruff_cache/
+
+# Docker
+*.egg-info/
+build/
+dist/
+*.tar
+*.whl
+
+report.html
+report.pdf
+out.json
+
+.idea
+misc/

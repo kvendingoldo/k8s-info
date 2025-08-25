@@ -1,0 +1,31 @@
+[project]
+name = "k8s-info"
+version = "0.1.0"
+description = "CLI tool to gather Kubernetes cluster information."
+authors = [{ name = "Alexander Sharov", email = "kvendingoldo@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "kubernetes",
+    "Jinja2",
+    "importlib-resources; python_version<'3.9'",
+    "weasyprint",
+]
+
+[project.scripts]
+k8s-info = "k8s_info.cli:main"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[build-system]
+requires = ["uv"]
+build-backend = "uv.build"
+
+[tool.setuptools.package-data]
+k8s_info = ["resources/html_template.html"]
+
+# To check code style: ruff check .
+# To format code: ruff format .

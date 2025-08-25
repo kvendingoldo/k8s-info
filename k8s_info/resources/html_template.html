@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Kubernetes Cluster Info</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <style>
+    body {
+        font-family: 'Roboto', Arial, sans-serif;
+        margin: 0;
+        background: #f4f7fa;
+        color: #222;
+    }
+    header {
+        background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+        color: #fff;
+        padding: 2rem 2rem 1rem 2rem;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    /* Collapsible section styles */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s;
+    }
+
+    .section-header:hover {
+        background-color: rgba(25, 118, 210, 0.05);
+    }
+
+    .section-header h2 {
+        margin: 0;
+        flex: 1;
+    }
+
+    .collapse-toggle {
+        background: #e3f2fd;
+        border: 1px solid #42a5f5;
+        color: #1976d2;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .collapse-toggle:hover {
+        background: #42a5f5;
+        color: white;
+    }
+
+    .section-content {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .section-content.collapsed {
+        max-height: 0;
+        opacity: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .section-content.expanded {
+        max-height: none;
+        opacity: 1;
+    }
+
+    /* Animation for smooth collapse/expand */
+    .section-content.collapsing {
+        transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    }
+    header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    .report-meta {
+        margin-bottom: 1rem;
+        font-size: 0.95em;
+        opacity: 0.9;
+    }
+    .report-meta p {
+        margin: 0.2rem 0;
+    }
+    nav {
+        margin-bottom: 1rem;
+    }
+    nav a {
+        color: #fff;
+        text-decoration: none;
+        margin-right: 2rem;
+        font-weight: 500;
+        transition: text-decoration 0.2s;
+    }
+    nav a:hover {
+        text-decoration: underline;
+    }
+    .container {
+        max-width: 1100px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    .section {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(25, 118, 210, 0.07);
+        margin-bottom: 2.5rem;
+        padding: 2rem 2rem 1.5rem 2rem;
+        transition: box-shadow 0.2s;
+    }
+    .section:hover {
+        box-shadow: 0 4px 24px rgba(25, 118, 210, 0.13);
+    }
+    h2 {
+        color: #1976d2;
+        margin-top: 0;
+        font-size: 1.5rem;
+        border-left: 4px solid #42a5f5;
+        padding-left: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1.5rem;
+        background: #fafbfc;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(25, 118, 210, 0.04);
+    }
+    th, td {
+        border: 1px solid #e3e8ee;
+        padding: 10px 12px;
+        text-align: left;
+    }
+    th {
+        background: #e3f2fd;
+        font-weight: 600;
+    }
+    tr:nth-child(even) {
+        background: #f4f7fa;
+    }
+    tr:hover {
+        background: #e3f2fd;
+        transition: background 0.2s;
+    }
+    pre {
+        background: #23272e;
+        color: #e3f2fd;
+        padding: 1em;
+        border-radius: 8px;
+        font-size: 0.97em;
+        overflow-x: auto;
+    }
+    .crd-table th, .crd-table td {
+        font-size: 0.97em;
+    }
+    .helm-summary {
+        background: #e3f2fd;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    .helm-summary p {
+        margin: 0.5rem 0;
+        font-weight: 500;
+    }
+    h3 {
+        color: #1565c0;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+    .global-controls {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .global-btn {
+        background: #42a5f5;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        margin: 0 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+
+    .global-btn:hover {
+        background: #1976d2;
+    }
+
+    .resource-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 1.5rem;
+    }
+    .resource-category {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid #e3e8ee;
+    }
+    .resource-category h3 {
+        margin-top: 0;
+        color: #1976d2;
+        border-left: 3px solid #42a5f5;
+        padding-left: 0.5rem;
+    }
+    .resource-category table {
+        margin-top: 1rem;
+        background: #fff;
+    }
+    footer {
+        text-align: center;
+        color: #888;
+        font-size: 0.95em;
+        margin: 2rem 0 1rem 0;
+        padding: 1rem;
+        border-top: 1px solid #e3e8ee;
+    }
+    footer p {
+        margin: 0.3rem 0;
+    }
+    @media (max-width: 700px) {
+        .container, .section { padding: 1rem; }
+        header { padding: 1rem; }
+    }
+    </style>
+</head>
+<body>
+    <script>
+        // Collapsible section functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all collapsible sections
+            const sections = document.querySelectorAll('.section');
+
+            sections.forEach(section => {
+                const header = section.querySelector('.section-header');
+                const content = section.querySelector('.section-content');
+                const toggle = section.querySelector('.collapse-toggle');
+
+                if (header && content && toggle) {
+                    // Set initial state (expanded by default)
+                    content.classList.add('expanded');
+                    toggle.textContent = 'Collapse';
+
+                    // Add click handler
+                    header.addEventListener('click', function() {
+                        const isExpanded = content.classList.contains('expanded');
+
+                        if (isExpanded) {
+                            // Collapse
+                            content.classList.remove('expanded');
+                            content.classList.add('collapsing');
+                            toggle.textContent = 'Expand';
+
+                            setTimeout(() => {
+                                content.classList.add('collapsed');
+                                content.classList.remove('collapsing');
+                            }, 300);
+                        } else {
+                            // Expand
+                            content.classList.remove('collapsed');
+                            content.classList.add('collapsing');
+                            toggle.textContent = 'Collapse';
+
+                            setTimeout(() => {
+                                content.classList.add('expanded');
+                                content.classList.remove('collapsing');
+                            }, 300);
+                        }
+                    });
+                }
+            });
+
+            // Add global collapse/expand all functionality
+            const nav = document.querySelector('nav');
+            if (nav) {
+                const globalControls = document.createElement('div');
+                globalControls.className = 'global-controls';
+                globalControls.innerHTML = `
+                    <button id="collapse-all" class="global-btn">Collapse All</button>
+                    <button id="expand-all" class="global-btn">Expand All</button>
+                `;
+                nav.appendChild(globalControls);
+
+                // Global collapse all
+                document.getElementById('collapse-all').addEventListener('click', function() {
+                    sections.forEach(section => {
+                        const content = section.querySelector('.section-content');
+                        const toggle = section.querySelector('.collapse-toggle');
+                        if (content && toggle) {
+                            content.classList.remove('expanded');
+                            content.classList.add('collapsed');
+                            toggle.textContent = 'Expand';
+                        }
+                    });
+                });
+
+                // Global expand all
+                document.getElementById('expand-all').addEventListener('click', function() {
+                    sections.forEach(section => {
+                        const content = section.querySelector('.section-content');
+                        const toggle = section.querySelector('.collapse-toggle');
+                        if (content && toggle) {
+                            content.classList.remove('collapsed');
+                            content.classList.add('expanded');
+                            toggle.textContent = 'Collapse';
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+    <header>
+        <h1>Kubernetes Cluster Info</h1>
+        <div class="report-meta">
+            <p><strong>Report Generated:</strong> {{ now }}</p>
+            <p><strong>Date:</strong> {{ timestamp.date if timestamp.date else 'N/A' }} | <strong>Time:</strong> {{ timestamp.time if timestamp.time else 'N/A' }}</p>
+        </div>
+        <nav>
+            <a href="#k8s-version">K8s Version</a>
+            <a href="#nodes">Nodes</a>
+            <a href="#node-details">Node Details</a>
+            <a href="#helm-charts">Helm Charts</a>
+            <a href="#docker-images">Docker Images</a>
+            <a href="#resource-counts">Resource Counts</a>
+            <a href="#common-resources">Common Resources</a>
+            <a href="#crds">CRDs</a>
+            <a href="#api-versions">API Versions</a>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="section" id="k8s-version">
+            <div class="section-header">
+                <h2>Kubernetes Version</h2>
+                <span class="collapse-toggle">Collapse</span>
+            </div>
+            <div class="section-content">
+                <table>
+                {% for k, v in k8s_version.items() %}
+                    <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+                {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="section" id="nodes">
+            <div class="section-header">
+                <h2>Nodes</h2>
+                <span class="collapse-toggle">Collapse</span>
+            </div>
+            <div class="section-content">
+                <table>
+                    <tr><th>Node count</th><td>{{ node_count }}</td></tr>
+                    <tr><th>Total CPU</th><td>{{ total_cpu }}</td></tr>
+                    <tr><th>Total Memory (MiB)</th><td>{{ total_memory_mib }}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="section" id="node-details">
+            <div class="section-header">
+                <h2>Node Details</h2>
+                <span class="collapse-toggle">Collapse</span>
+            </div>
+            <div class="section-content">
+                <table>
+                    <tr><th>Name</th><th>OS Image</th><th>Kubelet Version</th><th>CPU</th><th>Memory (MiB)</th></tr>
+                    {% for n in node_details %}
+                    <tr>
+                        <td>{{ n.name }}</td>
+                        <td>{{ n.os_image }}</td>
+                        <td>{{ n.kubelet_version }}</td>
+                        <td>{{ n.cpu }}</td>
+                        <td>{{ n.memory_mib }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="section" id="helm-charts">
+            <div class="section-header">
+                <h2>Helm Charts</h2>
+                <span class="collapse-toggle">Collapse</span>
+            </div>
+            <div class="section-content">
+                {% if helm_info.releases %}
+                <div class="helm-summary">
+                    <p><strong>Total Releases:</strong> {{ helm_info.total_releases }}</p>
+                    <p><strong>Unique Charts:</strong> {{ helm_info.chart_versions|length }}</p>
+                </div>
+                
+                <h3>Helm Releases</h3>
+                <table>
+                    <tr><th>Release Name</th><th>Namespace</th><th>Chart</th><th>Version</th><th>Status</th></tr>
+                    {% for release in helm_info.releases %}
+                    <tr>
+                        <td>{{ release.name }}</td>
+                        <td>{{ release.namespace }}</td>
+                        <td>{{ release.chart }}</td>
+                        <td>{{ release.version }}</td>
+                        <td>{{ release.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                
+                {% if helm_info.chart_versions %}
+                <h3>Chart Versions</h3>
+                <table>
+                    <tr><th>Chart Name</th><th>Versions</th></tr>
+                    {% for chart, versions in helm_info.chart_versions.items() %}
+                    <tr>
+                        <td>{{ chart }}</td>
+                        <td>{{ versions|join(', ') }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+                {% else %}
+                <p>No Helm releases found in the cluster.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="section" id="docker-images">
+            <div class="section-header">
+                <h2>Docker Images</h2>
+                <span class="collapse-toggle">Collapse</span>
+            </div>
+            <div class="section-content">
+                <table>
+                    <tr><th>Image</th></tr>
+                    {% for img in docker_images %}
+                    <tr><td>{{ img }}</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="section" id="resource-counts">
+            <h2>Resource Counts</h2>
+            <table>
+                <tr><th>Resource</th><th>Count</th></tr>
+                {% for k, v in resource_counts.items() %}
+                    {% if k != 'crds' %}
+                    <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+                    {% endif %}
+                {% endfor %}
+            </table>
+        </div>
+
+        {% if resource_counts.common_resources %}
+        <div class="section" id="common-resources">
+            <h2>Common Kubernetes Resources</h2>
+            <div class="resource-categories">
+                <div class="resource-category">
+                    <h3>Core Resources</h3>
+                    <table>
+                        <tr><th>Resource</th><th>Count</th></tr>
+                        {% if resource_counts.common_resources.pods is defined %}
+                        <tr><td>Pods</td><td>{{ resource_counts.common_resources.pods }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.services is defined %}
+                        <tr><td>Services</td><td>{{ resource_counts.common_resources.services }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.configmaps is defined %}
+                        <tr><td>ConfigMaps</td><td>{{ resource_counts.common_resources.configmaps }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.secrets is defined %}
+                        <tr><td>Secrets</td><td>{{ resource_counts.common_resources.secrets }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.namespaces is defined %}
+                        <tr><td>Namespaces</td><td>{{ resource_counts.common_resources.namespaces }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.nodes is defined %}
+                        <tr><td>Nodes</td><td>{{ resource_counts.common_resources.nodes }}</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <div class="resource-category">
+                    <h3>Workload Resources</h3>
+                    <table>
+                        <tr><th>Resource</th><th>Count</th></tr>
+                        {% if resource_counts.common_resources.deployments is defined %}
+                        <tr><td>Deployments</td><td>{{ resource_counts.common_resources.deployments }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.statefulsets is defined %}
+                        <tr><td>StatefulSets</td><td>{{ resource_counts.common_resources.statefulsets }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.daemonsets is defined %}
+                        <tr><td>DaemonSets</td><td>{{ resource_counts.common_resources.daemonsets }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.replicasets is defined %}
+                        <tr><td>ReplicaSets</td><td>{{ resource_counts.common_resources.replicasets }}</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <div class="resource-category">
+                    <h3>Storage & Networking</h3>
+                    <table>
+                        <tr><th>Resource</th><th>Count</th></tr>
+                        {% if resource_counts.common_resources.persistentvolumeclaims is defined %}
+                        <tr><td>PersistentVolumeClaims</td><td>{{ resource_counts.common_resources.persistentvolumeclaims }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.storageclasses is defined %}
+                        <tr><td>StorageClasses</td><td>{{ resource_counts.common_resources.storageclasses }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.ingresses is defined %}
+                        <tr><td>Ingresses</td><td>{{ resource_counts.common_resources.ingresses }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.networkpolicies is defined %}
+                        <tr><td>NetworkPolicies</td><td>{{ resource_counts.common_resources.networkpolicies }}</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <div class="resource-category">
+                    <h3>RBAC Resources</h3>
+                    <table>
+                        <tr><th>Resource</th><th>Count</th></tr>
+                        {% if resource_counts.common_resources.roles is defined %}
+                        <tr><td>Roles</td><td>{{ resource_counts.common_resources.roles }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.rolebindings is defined %}
+                        <tr><td>RoleBindings</td><td>{{ resource_counts.common_resources.rolebindings }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.clusterroles is defined %}
+                        <tr><td>ClusterRoles</td><td>{{ resource_counts.common_resources.clusterroles }}</td></tr>
+                        {% endif %}
+                        {% if resource_counts.common_resources.clusterrolebindings is defined %}
+                        <tr><td>ClusterRoleBindings</td><td>{{ resource_counts.common_resources.clusterrolebindings }}</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if crds %}
+        <div class="section" id="crds">
+            <h2>Custom Resource Definitions (CRDs)</h2>
+            <table class="crd-table">
+                <tr><th>CRD</th><th>Count</th></tr>
+                {% for k, v in crds.items() %}
+                <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+        <div class="section" id="api-versions">
+            <h2>API Versions</h2>
+            <pre>{{ api_versions }}</pre>
+        </div>
+    </div>
+    <footer>
+        <p>Report generated on {{ now }}</p>
+        <p><strong>ISO Format:</strong> {{ timestamp.iso_format if timestamp.iso_format else 'N/A' }}</p>
+        <p><strong>Unix Timestamp:</strong> {{ timestamp.unix_timestamp if timestamp.unix_timestamp else 'N/A' }}</p>
+        <p>Generated by k8s-info tool</p>
+    </footer>
+</body>
+</html>
